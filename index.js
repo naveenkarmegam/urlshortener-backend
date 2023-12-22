@@ -86,7 +86,7 @@ app.post('/register', async (req, res) => {
         const token = jsonwebtoken.sign({ userId: result.insertedId }, secretKey, { expiresIn: '1h' });
         res.status(201).json({ message: 'Registration successful and activate link sent to your email', newUser, token });
         connection.close()
-        const activateUrl = `http://localhost:4001/activate-account/${email}/${token}`
+        const activateUrl = `https://url-shortern-ory6.onrender.com/activate-account/${email}/${token}`
 
         const info = await transporter.sendMail({
             from: process.env.mail,
