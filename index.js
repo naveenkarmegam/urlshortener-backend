@@ -1,3 +1,4 @@
+const express = require('express');
 const bcrypt = require('bcryptjs');
 const jsonwebtoken = require('jsonwebtoken');;
 const cors = require('cors');
@@ -191,7 +192,7 @@ app.post('/forget-password', async (req, res) => {
             from: process.env.mail,
             to: email,
             subject: 'Reset password link',
-            text: `Click the following link to reset your password: https://main--grand-meringue-5caa6d.netlify.app/reset-password/${token}`
+            text: `Click the following link to reset your password: https://main--grand-meringue-5caa6d.netlify.app/dashboard/reset-password/${token}`
         });
 
         res.status(200).json({ message: 'Password reset link sent successfully.' });
