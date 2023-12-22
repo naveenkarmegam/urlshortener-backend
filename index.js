@@ -1,4 +1,3 @@
-const express = require('express');
 const bcrypt = require('bcryptjs');
 const jsonwebtoken = require('jsonwebtoken');;
 const cors = require('cors');
@@ -11,7 +10,6 @@ const secretKey = process.env.JWT_SECRET
 const PORT = 4001;
 const nodemailer = require("nodemailer");
 const bodyParser = require('body-parser');
-const shortUrl = shortid.generate();
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -34,6 +32,7 @@ app.get('/', (req, res) => {
 app.post("/short-url", async (req, res) => {
     try {
         const { originalUrl } = req.body
+        const shortUrl = shortid.generate();
         const connection = await MongoClient.connect(URL)
         const db = connection.db("urls")
         const urlData = {
@@ -41,7 +40,12 @@ app.post("/short-url", async (req, res) => {
             shortUrl,
         }
         const result = await db.collection("urlData").insertOne(urlData)
-        res.status(200).json({ message: "URL shortend succesfully", shortUrl })
+        res.status(200).json({
+            message: "URL shortend succesfully", url: {
+                originalUrl,
+                shortUrl,
+            }
+        })
         connection.close()
     } catch (error) {
         res.status(400).json({ message: "Something went wrong", error })
@@ -55,12 +59,13 @@ app.get("/:shortUrl", async (req, res) => {
         const result = await db.collection("urlData").findOne({ shortUrl })
 
         if (result) {
+            // res.json({ result })
             res.redirect(result.originalUrl)
         } else {
-            res.status(200).json({ message: "URL not found" })
+            res.status(400).json({ message: "URL not found" })
         }
     } catch (error) {
-        res.status(400).json({ message: "Something went wrong", error })
+        res.status(500).json({ message: "Something went wrong", error })
     }
 })
 
@@ -116,11 +121,11 @@ app.get("/activate-account/:email/:token", async (req, res) => {
 
             if (result.modifiedCount === 1) {
                 // res.status(200).json({ message: "Account activated successfully" }0);
-                res.redirect(`http://localhost:5173`);
+                res.redirect(`https://main--grand-meringue-5caa6d.netlify.app`);
             } else {
                 res.status(404).json({ message: "User not found or account is already activated" });
             }
- 
+
             connection.close();
         });
     } catch (error) {
@@ -140,16 +145,16 @@ app.post("/login", async (req, res) => {
         if (!user) {
             res.status(404).json({ message: "User or password not match" })
         }
-        
+
         if (!user.isActivated) {
-            res.status(200).json({ message: "Please Activate your account" })
+            res.status(400).json({ message: "Please Activate your account", isActivated : user.isActivated})
         }
         const passwordValid = await bcrypt.compare(password, user.password)
         if (!passwordValid) {
             res.status(404).json({ message: "user or password not match" })
         }
         const token = jsonwebtoken.sign({ userId: user._id }, secretKey, { expiresIn: "1h" })
-        // res.status(200).json({ message: 'Login successful', token });
+        res.status(200).json({ message: 'Login successful', token });
         connection.close()
     } catch (error) {
         console.log(error)
@@ -186,7 +191,7 @@ app.post('/forget-password', async (req, res) => {
             from: process.env.mail,
             to: email,
             subject: 'Reset password link',
-            text: `Click the following link to reset your password: https://password-reset-flow-vignesh.netlify.app/reset-password/${token}`
+            text: `Click the following link to reset your password: https://main--grand-meringue-5caa6d.netlify.app/reset-password/${token}`
         });
 
         res.status(200).json({ message: 'Password reset link sent successfully.' });
