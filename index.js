@@ -83,7 +83,7 @@ app.post('/register', async (req, res) => {
             password: hashedPassword,
             isActivated: false,
         }
-        const result = await db.collection("Registered").insertOne(newUser)
+        const result = await db.collection("Registered-users").insertOne(newUser)
         const token = jsonwebtoken.sign({ userId: result.insertedId }, secretKey, { expiresIn: '1h' });
         res.status(201).json({ message: 'Registration successful and activate link sent to your email', newUser, token });
         connection.close()
@@ -116,7 +116,7 @@ app.get("/activate-account/:email/:token", async (req, res) => {
             const connection = await MongoClient.connect(URL);
             const db = connection.db("users");
 
-            const result = await db.collection("Registered").updateOne({ email, isActivated: false }, {
+            const result = await db.collection("Registered-users").updateOne({ email, isActivated: false }, {
                 $set: { isActivated: true },
             });
 
@@ -142,7 +142,7 @@ app.post("/login", async (req, res) => {
         }
         const connection = await MongoClient.connect(URL)
         const db = connection.db("users")
-        const user = await db.collection("Registered").findOne({ email })
+        const user = await db.collection("Registered-users").findOne({ email })
         if (!user) {
             res.status(404).json({ message: "User or password not match" })
         }
@@ -167,14 +167,14 @@ app.post('/forget-password', async (req, res) => {
         const { email } = req.body;
         const connection = await MongoClient.connect(URL);
         const db = connection.db('users');
-        const user = await db.collection('Registered').findOne({ email });
+        const user = await db.collection('Registered-users').findOne({ email });
 
         if (!user) {
             res.status(404).json({ message: 'User not registered' });
         }
         const token = jsonwebtoken.sign({ id: user._id }, secretKey, { expiresIn: '1hr' });
 
-        await db.collection('Registered').updateOne({ email }, {
+        await db.collection('Registered-users').updateOne({ email }, {
             $set: { token }
         });
 
@@ -216,9 +216,9 @@ app.post("/reset-password/:token", async (req, res) => {
                     const hashedPassword = await bcrypt.hash(password, 10);
                     const connection = await MongoClient.connect(URL)
                     const db = connection.db("users")
-                    const user = await db.collection("Registered").findOne({ token: token })
+                    const user = await db.collection("Registered-users").findOne({ token: token })
 
-                    await db.collection("Registered").updateOne({ token }, {
+                    await db.collection("Registered-users").updateOne({ token }, {
                         $set: {
                             password: hashedPassword,
                             confirmPassword: hashedPassword
